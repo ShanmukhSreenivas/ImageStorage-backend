@@ -2,13 +2,11 @@ const User = require('../models/User')
 const Store = require('../models/Store')
 const graphql = require('graphql')
 const path = require('path')
-const fs = require('fs')
 const jwt = require('jsonwebtoken')
-const cloudinary = require('cloudinary')
+const cloudinary = require('cloudinary').v2
 require('dotenv').config();
 
 const { GraphQLObjectType , GraphQLInt, GraphQLString , GraphQLSchema , GraphQLList, GraphQLNonNull } = graphql
-const { authenticateFacebook, authenticateGoogle } = require('./passport');
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -36,7 +34,7 @@ const UserType = new GraphQLObjectType({
 })
 
 const StorageType = new GraphQLObjectType({
-    name: "StoreType",
+    name: "StorageType",
     description: "Documentation for Storage",
     fields: () => ({
         id: {type: new GraphQLNonNull(GraphQLString)},
@@ -52,10 +50,13 @@ const StorageType = new GraphQLObjectType({
     })
 })
 
+
+
 const TokenType = new GraphQLObjectType({
   name: "TokenType",
   description: "Documentation for Tokens for users",
   fields: () => ({
+      userId: { type: new GraphQLNonNull(GraphQLString)},
       token: { type: new GraphQLNonNull(GraphQLString)}
   })
 })
@@ -97,7 +98,28 @@ const RootQuery = new GraphQLObjectType({
             resolve(parent,args){
                 return Store.find({})
             }
-        }
+        },
+        login: {
+          type: TokenType,
+          args: {
+            email: {type: new GraphQLNonNull(GraphQLString)},
+            password: {type: new GraphQLNonNull(GraphQLString)}
+          },
+          resolve: async (parent,args) => {
+            const user = await User.findOne({email: args.email});
+            if(!user){
+              throw new Error('User not found');
+            }
+            const validatePassword = await user.validatePassword(args.password)
+            if(!validatePassword) {
+              throw new Error('Password is incorrect');
+            }
+            return {
+              userId: user.id,
+              token: user.getJwtToken(),
+            }
+          },
+        },
     }
 })
 
@@ -122,114 +144,35 @@ const Mutation = new GraphQLObjectType({
                 return user
             }
         },
-        login: {
-          type: TokenType,
-          args: {
-            email: {type: new GraphQLNonNull(GraphQLString)},
-            password: {type: new GraphQLNonNull(GraphQLString)}
-          },
-          resolve: async (parent,args) => {
-            const user = await User.findOne({where: args.email});
-            if(!user){
-              throw new Error('User not found');
-            }
-            const validatePassword = await user.validatePassword(args.password)
-            if(!validatePassword) {
-              throw new Error('Password is incorrect');
-            }
-            return {
-              token : user.getJwtToken(),
-            }
-          },
-        },
         uploadImage: {
           type: StorageType,
           args: {
             fileurl: {type: new GraphQLNonNull(GraphQLString)},
           },
-          resolve: async (parent,args,{me}) => {          
+          resolve: async (parent,args,req) => {          
+             if(!req.isAuth){
+              throw new Error("Unauthenticated!")
+            }
+            const mainDir = path.dirname(require.main.filename);
+            filename = `${mainDir}/uploads/${args.fileurl}`;
             try{
-              const photo = await cloudinary.v2.uploader.upload(args.fileurl);
-              await Store.update({
+              const photo = await cloudinary.uploader.upload(filename);
+              await Store.Update({
+                userId: req.userId,
                 imageurl: `${photo.public_id}.${photo.format}` 
               }, {
-                where: { userId: me.id }
+                where: { userId: req.userId }
               });
-              return `${photo.public_id}.${photo.format}`
+              return {
+                userId: req.userId,
+                imageurl: `${photo.public_id}.${photo.format}`
+              }
             }
             catch(error){
               throw new Error(error);
             }     
         }
       },
-        /*authFacebook: async (_, { input: { accessToken } }, { req, res }) => {
-            req.body = {
-              ...req.body,
-              access_token: accessToken,
-            };
-      
-            try {
-              const { data, info } = await authenticateFacebook(req, res);
-      
-              if (data) {
-                const user = await User.upsertFbUser(data);
-        
-                if (user) {
-                  return ({
-                    name: user.name,
-                    token: user.generateJWT(),
-                  });
-                }
-              }
-      
-              if (info) {
-                console.log(info);
-                switch (info.code) {
-                  case 'ETIMEDOUT':
-                    return (new Error('Failed to reach Facebook: Try Again'));
-                  default:
-                    return (new Error('something went wrong'));
-                }
-              }
-              return (Error('server error'));
-            } catch (error) {
-              return error;
-            }
-          },
-          authGoogle: async (_, { input: { accessToken } }, { req, res }) => {
-            req.body = {
-              ...req.body,
-              access_token: accessToken,
-            };
-      
-            try {
-              const { data, info } = await authenticateGoogle(req, res);
-      
-              if (data) {
-                const user = await User.upsertGoogleUser(data);
-      
-                if (user) {
-                  return ({
-                    name: user.name,
-                    token: user.generateJWT(),
-                  });
-                }
-              }
-      
-              if (info) {
-                console.log(info);
-                switch (info.code) {
-                  case 'ETIMEDOUT':
-                    return (new Error('Failed to reach Google: Try Again'));
-                  default:
-                    return (new Error('something went wrong'));
-                }
-              }
-              return (Error('server error'));
-            } catch (error) {
-              return error;
-            }
-          },*/
     }
 })
 

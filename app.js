@@ -1,18 +1,18 @@
 const express = require('express')
-const bodyParser = require('body-parser')
-const graphqlHttp = require('express-graphql')
+var { graphqlHTTP } = require('express-graphql');
 const jwt = require('jsonwebtoken')
 require('dotenv').config();
 const mongoose = require('mongoose')
-
+const isAuth = require('./middleware/auth')
 
 const app = express()
+var PORT = 5000
 
 const schema = require('./schema/schema')
 
-
 const getLoggedInUser = req => {
-    const token = req.headers['x-auth-token'];
+    const authHeader = req.get('Authorization');
+    const token = authHeader.split(' ')[1];
     if(token) {
         try{
             return jwt.verify(token, process.env.JWT_SECRET)
@@ -22,8 +22,8 @@ const getLoggedInUser = req => {
     }
 }
 
-app.use(bodyParser.json())
-app.use('./graphql', graphqlHttp.graphqlHTTP({
+app.use(isAuth)
+app.use('/graphql', graphqlHTTP({
     schema: schema,
     graphiql: true,
     context: ({ req, res }) => ({
@@ -48,4 +48,7 @@ catch(err){
     console.log(err)
 }
 
-app.listen(5000., () => console.log('Server running at port 5000'))
+app.listen(PORT, function(err){
+    if (err) console.log("Error in server setup")
+    console.log("Server listening on Port", PORT);
+})

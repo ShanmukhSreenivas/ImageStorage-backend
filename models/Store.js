@@ -1,9 +1,14 @@
 const mongoose = require('mongoose')
 
 const storeSchema = new mongoose.Schema({
-    //imageId: String,
-    userId: String,
-    imageurl: String,
+    userId: {
+        type: String,
+        required: true
+    },
+    imageurl:{
+        type: String,
+        required: true
+    }
 })
 
 module.exports = mongoose.model('Store',storeSchema)
