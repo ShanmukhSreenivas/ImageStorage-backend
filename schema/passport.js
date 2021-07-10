@@ -1,6 +1,8 @@
 const passport = require('passport');
 const FacebookTokenStrategy = require('passport-facebook-token');
 const { Strategy: GoogleTokenStrategy } = require('passport-google-token');
+require('dotenv').config();
+
 
 // FACEBOOK STRATEGY
 const FacebookTokenStrategyCallback = (accessToken, refreshToken, profile, done) => done(null, {
@@ -10,8 +12,8 @@ const FacebookTokenStrategyCallback = (accessToken, refreshToken, profile, done)
 });
 
 passport.use(new FacebookTokenStrategy({
-    clientID: 'your-facebook-app-id',
-    clientSecret: 'your-facebook-app-secret',
+    clientID: process.env.FACEBOOK_CLIENT_ID /* '262319249001254' */,
+    clientSecret: process.env.FACEBOOK_CLIENT_SECRET /* 'ba84e931222689bd95ce5393110ee797' */,
 }, FacebookTokenStrategyCallback));
 
 // GOOGLE STRATEGY
@@ -22,8 +24,8 @@ const GoogleTokenStrategyCallback = (accessToken, refreshToken, profile, done) =
 });
 
 passport.use(new GoogleTokenStrategy({
-    clientID: 'your-google-client-id',
-    clientSecret: 'your-google-client-secret',
+    clientID: process.env.GOOGLE_CLIENT_ID /* '864664905033-de7mcecde9jbfkapmt97m8e4dh4rks20.apps.googleusercontent.com' */,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET/* 'BM94M7Sg_cRJ-EVjuMs1fUeT' */,
 }, GoogleTokenStrategyCallback));
 
 const authenticateFacebook = (req, res) => new Promise((resolve, reject) => {
