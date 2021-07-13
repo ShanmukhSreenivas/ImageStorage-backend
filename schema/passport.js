@@ -1,6 +1,6 @@
 const passport = require('passport');
 const FacebookTokenStrategy = require('passport-facebook-token');
-const { Strategy: GoogleTokenStrategy } = require('passport-google-token');
+const { Strategy: GoogleTokenStrategy } = require('passport-token-google');
 require('dotenv').config();
 
 

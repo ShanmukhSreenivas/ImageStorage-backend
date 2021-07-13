@@ -1,6 +1,7 @@
 const User = require('../models/User')
 const Store = require('../models/Store')
 const graphql = require('graphql')
+const bcrypt = require('bcryptjs')
 //const cloudinary = require('cloudinary').v2
 require('dotenv').config();
 const { authenticateFacebook, authenticateGoogle } = require('./passport')
@@ -171,10 +172,12 @@ const Mutation = new GraphQLObjectType({
                 if (existingUser) {
                   throw new Error("User already exists");
                 }          
+                const hashedPassword = await bcrypt.hash(args.password, 12);
+
                 const user = new User({
                     name: args.name,
                     email: args.email,
-                    password: args.password
+                    password: hashedPassword
                 })
                 user.save()
                 return user
@@ -207,18 +210,18 @@ const Mutation = new GraphQLObjectType({
       },
       authFacebook: {
         type: TokenType,
-        args: {
-          input: {
-            type: new GraphQLNonNull(AuthInputType)
-          }
-        },      
-        resolve: async (_, { input }, { req, res }) => {
-          req.body.access_token = input.accessToken;
-/*           req.body = {
+          args:{
+            input: {
+            type: new GraphQLNonNull(AuthInputType)   
+        },  
+      },    
+        resolve: async (_,{ input }, { req, res }) => {
+          //req.body.access_token = input.accessToken;
+           req.body = {
            ...req.body, 
             access_token: input.accessToken,
           };
- */     
+     
           try {
             // data contains the accessToken, refreshToken and profile from passport
             const { data, info } = await authenticateFacebook(req, res);
@@ -257,12 +260,12 @@ const Mutation = new GraphQLObjectType({
           }
         },      
         resolve: async (_, { input }, { req, res }) => {
-          req.body.access_token = input.accessToken;
-/*           req.body = {
+//          req.body.access_token = input.accessToken;
+          req.body = {
             ...req.body, 
              access_token: input.accessToken,
            };
- */    
+    
         try {
           // data contains the accessToken, refreshToken and profile from passport
           const { data, info } = await authenticateGoogle(req, res);

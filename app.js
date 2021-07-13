@@ -3,22 +3,22 @@ var { graphqlHTTP } = require('express-graphql');
 //const jwt = require('jsonwebtoken')
 require('dotenv').config();
 const mongoose = require('mongoose')
-//const bodyParser = require('body-parser-graphql')
-const cors = require('cors')
+const bodyParser = require('body-parser')
 
 const app = express()
 var PORT = 5000
 
 const schema = require('./schema/schema')
 
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-//app.use(cors());
-app.use('/graphql', graphqlHTTP({
+app.use(express.urlencoded({ extended: true }));
+app.use(express.text());
+app.use('/graphql', graphqlHTTP((req,res) => ({
     schema: schema,
     graphiql: true,
-    context: ({ req, res }) => ({ req, res }),
-}))
+    context: { req, res }
+})))
 
 
 try{

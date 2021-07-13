@@ -34,12 +34,12 @@ const userSchema = new mongoose.Schema({
     }
 })
 
-userSchema.pre("save", async function (next) {
+/* userSchema.pre("save", async function (next) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
   });
-
+ */
 userSchema.methods.getJwtToken = function () {
     return jwt.sign({email: this.email, userId: this._id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRE,
@@ -58,7 +58,7 @@ userSchema.statics.upsertFbUser = async function ({ accessToken, refreshToken, p
 
     // no user was found, lets create a new one
     if (!user) {
-        const newUser = await User.create({
+        const newUser = await new User({
             name: profile.displayName || `${profile.familyName} ${profile.givenName}`,
             email: profile.emails[0].value,
             'social.facebookProvider': {
@@ -66,7 +66,7 @@ userSchema.statics.upsertFbUser = async function ({ accessToken, refreshToken, p
                 token: accessToken,
             },
         });
-
+        newUser.save()
         return newUser;
     }
     return user;
@@ -79,7 +79,7 @@ userSchema.statics.upsertGoogleUser = async function ({ accessToken, refreshToke
 
     // no user was found, lets create a new one
     if (!user) {
-        const newUser = await User.create({
+        const newUser = await new User({
             name: profile.displayName || `${profile.familyName} ${profile.givenName}`,
             email: profile.emails[0].value,
             'social.googleProvider': {
@@ -87,7 +87,7 @@ userSchema.statics.upsertGoogleUser = async function ({ accessToken, refreshToke
                 token: accessToken,
             },
         });
-
+        newUser.save()
         return newUser;
     }
     return user;
