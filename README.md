@@ -1,8 +1,6 @@
 # ImageStorage-backend
 
-# Babbl Frontend
-
-<p align="center"><img src="./assets/image-storage-logo.png"></p>
+<p align="center"><img src="./image-storage-logo.png"></p>
 
 A backend repository for Image Storage. A simple Image storing application developed using React-Native and GraphQL with MongoDB and Cloudinary to store data
 
