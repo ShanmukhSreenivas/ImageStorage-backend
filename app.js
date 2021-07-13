@@ -1,26 +1,25 @@
 const express = require('express')
 var { graphqlHTTP } = require('express-graphql');
-const jwt = require('jsonwebtoken')
+//const jwt = require('jsonwebtoken')
 require('dotenv').config();
 const mongoose = require('mongoose')
-const isAuth = require('./middleware/auth')
-const bodyParser = require('body-parser-graphql')
+//const bodyParser = require('body-parser-graphql')
 const cors = require('cors')
 
 const app = express()
-app.use(express.json()); // support json encoded bodies
-app.use(express.urlencoded({ extended: false })); // support encoded bodies
 var PORT = 5000
 
 const schema = require('./schema/schema')
-app.use(cors());
-app.use(bodyParser.graphql());
-app.use(isAuth)
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+//app.use(cors());
 app.use('/graphql', graphqlHTTP({
     schema: schema,
     graphiql: true,
     context: ({ req, res }) => ({ req, res }),
 }))
+
 
 try{
     mongoose.promise = global.Promise;

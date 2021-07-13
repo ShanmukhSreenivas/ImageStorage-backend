@@ -1,20 +1,18 @@
 const User = require('../models/User')
 const Store = require('../models/Store')
 const graphql = require('graphql')
-const path = require('path')
-const jwt = require('jsonwebtoken')
-const cloudinary = require('cloudinary').v2
+//const cloudinary = require('cloudinary').v2
 require('dotenv').config();
 const { authenticateFacebook, authenticateGoogle } = require('./passport')
 
-const { GraphQLObjectType ,GraphQLInputObjectType, GraphQLInt, GraphQLString , GraphQLSchema , GraphQLList, GraphQLNonNull } = graphql
+const { GraphQLObjectType ,GraphQLInputObjectType, GraphQLInt, GraphQLString , GraphQLSchema , GraphQLList, GraphQLNonNull, GraphQLScalarType } = graphql
 
-cloudinary.config({
+/* cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.API_KEY,
   api_secret: process.env.API_SECRET,
 });
-
+ */
 
 const UserType = new GraphQLObjectType({
     name: "UserType",
@@ -40,6 +38,7 @@ const StorageType = new GraphQLObjectType({
     fields: () => ({
         id: {type: new GraphQLNonNull(GraphQLString)},
         userId: {type: new GraphQLNonNull(GraphQLString)},
+        imagename: {type: new GraphQLNonNull(GraphQLString)},
         imageurl: {type: GraphQLString},        
         
         user: {
@@ -51,6 +50,18 @@ const StorageType = new GraphQLObjectType({
     })
 })
 
+
+/* const ImageType = new GraphQLObjectType({
+  name: "StorageType",
+  description: "Documentation for Storage",
+  fields: () => ({
+      image: {
+        type: StorageType,
+
+      },
+  })
+})
+ */
 
 
 const TokenType = new GraphQLObjectType({
@@ -103,6 +114,16 @@ const RootQuery = new GraphQLObjectType({
                 return Store.findById(args.id)
             }
         },
+
+        userPictures: {
+          type: new GraphQLList(StorageType),
+          args: {
+            userId: {type: GraphQLString},
+          },
+          resolve(parent,args){
+              return Store.find({userId: args.userId})
+          }
+        },
         pictures: {
             type: new GraphQLList(StorageType),
             resolve(parent,args){
@@ -144,7 +165,12 @@ const Mutation = new GraphQLObjectType({
                 email: {type: new GraphQLNonNull(GraphQLString)},
                 password: {type: new GraphQLNonNull(GraphQLString)}
             },
-            resolve(parent,args){
+            resolve: async (parent,args) => {
+              try{
+                const existingUser = await User.findOne({ email: args.email });
+                if (existingUser) {
+                  throw new Error("User already exists");
+                }          
                 const user = new User({
                     name: args.name,
                     email: args.email,
@@ -152,24 +178,24 @@ const Mutation = new GraphQLObjectType({
                 })
                 user.save()
                 return user
+            }catch(err){
+              throw new Error("User signup failed")
             }
+          }
         },
         uploadImage: {
           type: StorageType,
           args: {
-            fileurl: {type: new GraphQLNonNull(GraphQLString)},
+            imagename: {type: new GraphQLNonNull(GraphQLString)}, 
+            imageurl: {type: new GraphQLNonNull(GraphQLString)},
+            userId: {type: new GraphQLNonNull(GraphQLString)},
           },
-          resolve: async (args, req) => {          
-             if(!req.isAuth){
-              throw new Error("Unauthenticated!")
-            }
-            const mainDir = path.dirname(require.main.filename);
-            filename = `${mainDir}/uploads/${args.fileurl}`;
+          resolve: async (parent, args) => {  
             try{
-              const photo = await cloudinary.uploader.upload(filename);
               const store = new Store({
-                userId: req.userId,
-                imageurl: `${photo.public_id}.${photo.format}`,
+                userId: args.userId,
+                imagename: args.imagename,
+                imageurl: args.imageurl,
            })
             store.save()
             return store
@@ -187,12 +213,12 @@ const Mutation = new GraphQLObjectType({
           }
         },      
         resolve: async (_, { input }, { req, res }) => {
-        
-          req.body = {
+          req.body.access_token = input.accessToken;
+/*           req.body = {
            ...req.body, 
             access_token: input.accessToken,
           };
-     
+ */     
           try {
             // data contains the accessToken, refreshToken and profile from passport
             const { data, info } = await authenticateFacebook(req, res);
@@ -231,11 +257,12 @@ const Mutation = new GraphQLObjectType({
           }
         },      
         resolve: async (_, { input }, { req, res }) => {
-          req.body = {
+          req.body.access_token = input.accessToken;
+/*           req.body = {
             ...req.body, 
              access_token: input.accessToken,
            };
-    
+ */    
         try {
           // data contains the accessToken, refreshToken and profile from passport
           const { data, info } = await authenticateGoogle(req, res);

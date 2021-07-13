@@ -5,6 +5,10 @@ const storeSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    imagename:{
+        type: String,
+        required: true
+    },
     imageurl:{
         type: String,
         required: true
