@@ -23,7 +23,7 @@ app.use('/graphql', graphqlHTTP((req,res) => ({
 
 try{
     mongoose.promise = global.Promise;
-    mongoose.connect('mongodb+srv://dbUser:atlaspassword@cluster0.bghub.mongodb.net/Image_storage?retryWrites=true&w=majority',
+    mongoose.connect(process.env.MONGODB_URI,
     {
         useNewUrlParser : true ,
         useUnifiedTopology: true
