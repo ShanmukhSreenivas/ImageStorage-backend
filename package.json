@@ -17,12 +17,10 @@
   },
   "homepage": "https://github.com/ShanmukhSreenivas/ImageStorage-backend#readme",
   "dependencies": {
-    "apollo-server": "^2.25.2",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "body-parser-graphql": "^1.1.0",
     "cloudinary": "^1.26.2",
-    "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "express-graphql": "^0.12.0",
