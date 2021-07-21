@@ -1,9 +1,7 @@
 const express = require('express')
 var { graphqlHTTP } = require('express-graphql');
-//const jwt = require('jsonwebtoken')
 require('dotenv').config();
 const mongoose = require('mongoose')
-const bodyParser = require('body-parser')
 
 const app = express()
 var PORT = 5000
