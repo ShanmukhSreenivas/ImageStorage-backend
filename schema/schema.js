@@ -2,18 +2,11 @@ const User = require('../models/User')
 const Store = require('../models/Store')
 const graphql = require('graphql')
 const bcrypt = require('bcryptjs')
-//const cloudinary = require('cloudinary').v2
 require('dotenv').config();
 const { authenticateFacebook, authenticateGoogle } = require('./passport')
 
 const { GraphQLObjectType ,GraphQLInputObjectType, GraphQLInt, GraphQLString , GraphQLSchema , GraphQLList, GraphQLNonNull, GraphQLScalarType } = graphql
 
-/* cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET,
-});
- */
 
 const UserType = new GraphQLObjectType({
     name: "UserType",
@@ -51,18 +44,6 @@ const StorageType = new GraphQLObjectType({
     })
 })
 
-
-/* const ImageType = new GraphQLObjectType({
-  name: "StorageType",
-  description: "Documentation for Storage",
-  fields: () => ({
-      image: {
-        type: StorageType,
-
-      },
-  })
-})
- */
 
 
 const TokenType = new GraphQLObjectType({
@@ -216,7 +197,6 @@ const Mutation = new GraphQLObjectType({
         },  
       },    
         resolve: async (_,{ input }, { req, res }) => {
-          //req.body.access_token = input.accessToken;
            req.body = {
            ...req.body, 
             access_token: input.accessToken,
@@ -260,7 +240,6 @@ const Mutation = new GraphQLObjectType({
           }
         },      
         resolve: async (_, { input }, { req, res }) => {
-//          req.body.access_token = input.accessToken;
           req.body = {
             ...req.body, 
              access_token: input.accessToken,
